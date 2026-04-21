@@ -1,246 +1,435 @@
+# Importem les llibreries
+import matplotlib.pyplot as plt
+import math
 import tkinter as tk
+
+# Importem funcions i classes dels altres fitxers
 from airports import *
+from aircraft import *
 
-#Creem llista on guardar els aeroports
+# Creem dues llistes, una pels aeroports i l'altre pels vols
 airports = []
+aircrafts = []
 
 
-def UpdateList():
-    #Esborrem el contingut actual
-    listbox.delete(0, tk.END)
-    #Iniciem el recorregut
+#Actualitzem la llista d'aeroports de la interfície
+def UpdateAirportList():
+    # Esborrem tot el que hi havia abans al llistat
+    listbox_airports.delete(0, tk.END)
+
+    # Recorrem la llista
     i = 0
     while i < len(airports):
+        # text que volem mostrar de cada aeroport
         text = airports[i].ICAO + " | " + str(airports[i].latitude) + " | " + str(airports[i].longitude) + " | " + str(airports[i].isSchengen)
-        listbox.insert(tk.END, text)
+
+        # Afegim text
+        listbox_airports.insert(tk.END, text)
         i = i + 1
 
 
+# Actualitzem la llista de vols de la interfície
+def UpdateAircraftList():
+    # Esborrem el que hi havia abans
+    listbox_aircrafts.delete(0, tk.END)
+
+    # Recorrem la llista
+    i = 0
+    while i < len(aircrafts):
+        # Preparem el text
+        text = aircrafts[i].id + " | " + aircrafts[i].origin + " | " + aircrafts[i].landing_time + " | " + aircrafts[i].airline
+
+        # Afegim text al llistat
+        listbox_aircrafts.insert(tk.END, text)
+        i = i + 1
+
+
+# Carreguem els aeroports des del fitxer
 def LoadButton():
-    # Indiquem que treballarem amb la variable global airports
     global airports
 
-    # Llegim el nom del fitxer escrit per l'usuari
+    # Agafem el nom del fitxer escrit
     filename = entry_file.get().strip()
 
     # Carreguem els aeroports del fitxer
     airports = LoadAirports(filename)
 
-    # Actualitzem el valor Schengen de tots els aeroports carregats
+    # Actualitzem el valor Schengen de tots els aeroports
     i = 0
     while i < len(airports):
         SetSchengen(airports[i])
         i = i + 1
 
-    # Actualitzem la llista visual de la interfície
-    UpdateList()
+    # Actualitzem llista que es veu a la finestra
+    UpdateAirportList()
 
     # Mostrem quants aeroports s'han carregat
     label_result.config(text="Airports loaded: " + str(len(airports)))
 
 
+# Afegim un aeroport nou
 def AddButton():
     try:
-        # Llegim el codi ICAO i les coordenades introduïdes
+        # Llegim dades escrites pels camps
         code = entry_code.get().strip().upper()
         lat = float(entry_lat.get())
         lng = float(entry_lng.get())
 
-        # Creem un nou objecte Airport amb aquestes dades
+        # Creem aeroport nou
         airport = Airport(code, lat, lng)
 
-        # Calculem si és Schengen o no
+        # Mirem si és Schengen o no
         SetSchengen(airport)
 
-        # Intentem afegir-lo a la llista
+        # Afegim l'aeroport a la llista
         AddAirport(airports, airport)
 
-        # Actualitzem la llista visual
-        UpdateList()
+        # Actualitzem la llista
+        UpdateAirportList()
 
-        # Mostrem missatge de confirmació
+        # confirmació
         label_result.config(text="Airport processed")
     except:
-        # Si hi ha error en les dades introduïdes, mostrem missatge d'error
+        # Si hi ha algun error en les dades, mostrem missatge
         label_result.config(text="Error in airport data")
 
 
+# Eliminem un aeroport a partir del seu codi
 def RemoveButton():
-    # Llegim el codi ICAO que l'usuari vol eliminar
+    # Llegim el codi escrit per l'usuari
     code = entry_code.get().strip().upper()
 
-    # Intentem eliminar l'aeroport de la llista
+    # Intentem eliminar l'aeroport
     result = RemoveAirport(airports, code)
 
-    # Mostrem un missatge segons si s'ha trobat o no
+    # Si s'ha trobat i eliminat, actualitzem la llista
     if result:
+        UpdateAirportList()
         label_result.config(text="Airport removed")
     else:
+        # Si no existeix, ho indiquem
         label_result.config(text="Airport not found")
 
 
+# Tornem a calcular si cada aeroport és Schengen o no
 def SetSchengenButton():
-    # Recorrem tots els aeroports per actualitzar-ne el valor Schengen
+    # Recorrem tots els aeroports
     i = 0
     while i < len(airports):
         SetSchengen(airports[i])
         i = i + 1
 
-    # Actualitzem la llista visual
-    UpdateList()
+    # Actualitzem la llista
+    UpdateAirportList()
 
-    # Mostrem missatge de confirmació
+    # Missatge de confirmació
     label_result.config(text="Schengen updated")
 
 
+# Guardem en un fitxer els aeroports Schengen
 def SaveButton():
-    # Llegim el nom del fitxer on es guardaran els aeroports Schengen
-    filename = entry_save.get()
+    # Agafem el nom del fitxer on volem guardar
+    filename = entry_save.get().strip()
 
-    # Guardem els aeroports Schengen en el fitxer
+    # Guardem els aeroports Schengen
     result = SaveSchengenAirports(airports, filename)
 
-    # Mostrem si el procés ha anat bé o no
+    # Comprovem si s'ha pogut guardar bé
     if result:
         label_result.config(text="Schengen airports saved")
     else:
         label_result.config(text="Error saving file")
 
 
+# Mostrem el gràfic dels aeroports
 def PlotButton():
-    # Mostrem el gràfic amb el nombre d'aeroports Schengen i no Schengen
     PlotAirports(airports)
+    label_result.config(text="Airport plot shown")
 
 
-    label_result.config(text="Plot shown")
-
-
+# Creem fitxer KML per al Google Earth
 def MapButton():
-    # Generem el fitxer KML amb la informació
     MapAirports(airports)
+    label_result.config(text="Airport KML file created")
 
 
-    label_result.config(text="KML file created")
+# Mostrem la informació de l'aeroport seleccionat
+def ShowSelectedAirportButton():
+    # Mirem quin element del llistat està seleccionat
+    selected = listbox_airports.curselection()
 
-
-def ShowSelectedButton():
-    # Obtenim la posició de l'element seleccionat
-    selected = listbox.curselection()
-
-    # Comprovem que hi hagi algun element seleccionat
+    # Si hi ha algun element seleccionat
     if len(selected) > 0:
-        # Obtenim l'índex de l'aeroport seleccionat
         index = selected[0]
         airport = airports[index]
 
-        # Esborrem el text anterior del panell de sortida
+        # Esborrem el text anterior
         text_output.delete("1.0", tk.END)
 
-        # Mostrem les dades
+        # Escrivim la informació de l'aeroport
         text_output.insert(tk.END, "ICAO: " + airport.ICAO + "\n")
         text_output.insert(tk.END, "Latitude: " + str(airport.latitude) + "\n")
         text_output.insert(tk.END, "Longitude: " + str(airport.longitude) + "\n")
         text_output.insert(tk.END, "Schengen: " + str(airport.isSchengen) + "\n")
 
 
-# Creem la finestra principal de la interfície
+# Carreguem els vols des d'un fitxer
+def LoadArrivalsButton():
+    global aircrafts
+
+    # Agafem el nom del fitxer
+    filename = entry_arrivals_file.get().strip()
+
+    # Carreguem els vols
+    aircrafts = LoadArrivals(filename)
+
+    # Actualitzem la llista de vols a la finestra
+    UpdateAircraftList()
+
+    # Mostrem quants vols s'han carregat
+    label_result.config(text="Flights loaded: " + str(len(aircrafts)))
+
+
+# Guardem els vols en un fitxer
+def SaveFlightsButton():
+    # Agafem el nom del fitxer de sortida
+    filename = entry_arrivals_save.get().strip()
+
+    # Guardem els vols
+    result = SaveFlights(aircrafts, filename)
+
+    # Comprovem s'ha executat bé
+    if result:
+        label_result.config(text="Flights saved")
+    else:
+        label_result.config(text="Error saving flights")
+
+
+# Mostrem el gràfic d'arribades per hora
+def PlotArrivalsButton():
+    PlotArrivals(aircrafts)
+    label_result.config(text="Arrivals plot shown")
+
+
+# Mostrem el gràfic de vols per aerolínia
+def PlotAirlinesButton():
+    PlotAirlines(aircrafts)
+    label_result.config(text="Airlines plot shown")
+
+
+# Mostrem el gràfic de vols Schengen i no Schengen
+def PlotFlightsTypeButton():
+    # Si no hi ha aeroports carregats, no es pot
+    if len(airports) == 0:
+        label_result.config(text="Load airports first")
+        return
+
+    # Fem el gràfic
+    PlotFlightsType(aircrafts, airports)
+    label_result.config(text="Flights type plot shown")
+
+
+# Creem el fitxer KML dels vols
+def MapFlightsButton():
+    # Si no hi ha aeroports carregats, no es pot
+    if len(airports) == 0:
+        label_result.config(text="Load airports first")
+        return
+
+    # Creem el fitxer per a Google Earth
+    MapFlights(aircrafts, airports)
+    label_result.config(text="Flights KML file created")
+
+
+# Filtrem només els vols de llarga distància
+def ShowLongDistanceButton():
+    global aircrafts
+
+    # Si no hi ha aeroports carregats, no es pot calcular
+    if len(airports) == 0:
+        label_result.config(text="Load airports first")
+        return
+
+    # Ens quedem només amb els vols de llarga distància
+    aircrafts = LongDistanceArrivals(aircrafts, airports)
+
+    # Actualitzem la llista de vols
+    UpdateAircraftList()
+
+    # Mostrem quants vols han quedat
+    label_result.config(text="Long distance flights shown: " + str(len(aircrafts)))
+
+
+# Mostrem la informació del vol seleccionat
+def ShowSelectedAircraftButton():
+    # Mirem quin vol està seleccionat
+    selected = listbox_aircrafts.curselection()
+
+    # Si hi ha algun seleccionat
+    if len(selected) > 0:
+        index = selected[0]
+        aircraft = aircrafts[index]
+
+        # Esborrem el text anterior
+        text_output.delete("1.0", tk.END)
+
+        # Escrivim la informació del vol
+        text_output.insert(tk.END, "ID: " + aircraft.id + "\n")
+        text_output.insert(tk.END, "Origin: " + aircraft.origin + "\n")
+        text_output.insert(tk.END, "Landing time: " + aircraft.landing_time + "\n")
+        text_output.insert(tk.END, "Airline: " + aircraft.airline + "\n")
+
+
+# Creem la finestra principal del programa
 root = tk.Tk()
 
-# Definim el títol de la finestra
-root.title("Airport Interface")
+# Posem el títol de la finestra
+root.title("Airport and Aircraft Interface")
 
-# Definim la mida de la finestra
-root.geometry("900x600")
+# Posem la mida de la finestra
+root.geometry("1200x700")
 
-# Etiqueta per indicar el camp de càrrega de fitxer
-label1 = tk.Label(root, text="Load file:")
+
+# Etiqueta fitxer d'aeroports
+label1 = tk.Label(root, text="Load airports file:")
 label1.grid(row=0, column=0)
 
-# Caixa de text per escriure el nom del fitxer a carregar
+# Casella per escriure el nom del fitxer d'aeroports
 entry_file = tk.Entry(root, width=20)
 entry_file.grid(row=0, column=1)
-
-# Posem un nom de fitxer per defecte
 entry_file.insert(0, "Airports.txt")
 
-# Botó per carregar els aeroports del fitxer
+# Botó per carregar aeroports
 button_load = tk.Button(root, text="Load Airports", command=LoadButton)
 button_load.grid(row=0, column=2)
 
-# Etiqueta del camp ICAO
+# Etiqueta camp ICAO
 label2 = tk.Label(root, text="ICAO:")
 label2.grid(row=1, column=0)
 
-# Caixa de text per introduir el codi ICAO
+# Casella codi ICAO
 entry_code = tk.Entry(root, width=10)
 entry_code.grid(row=1, column=1)
 
-# Etiqueta del camp latitud
+# Etiqueta latitud
 label3 = tk.Label(root, text="Latitude:")
 label3.grid(row=2, column=0)
 
-# Caixa de text per introduir la latitud
+# Casella latitud
 entry_lat = tk.Entry(root, width=10)
 entry_lat.grid(row=2, column=1)
 
-# Etiqueta del camp longitud
+# Etiqueta longitud
 label4 = tk.Label(root, text="Longitude:")
 label4.grid(row=3, column=0)
 
-# Caixa de text per introduir la longitud
+# Casella longitud
 entry_lng = tk.Entry(root, width=10)
 entry_lng.grid(row=3, column=1)
 
-# Botó per afegir un aeroport
+# Botó afegir aeroport
 button_add = tk.Button(root, text="Add Airport", command=AddButton)
 button_add.grid(row=4, column=0)
 
-# Botó per eliminar un aeroport
+# Botó eliminar aeroport
 button_remove = tk.Button(root, text="Remove Airport", command=RemoveButton)
 button_remove.grid(row=4, column=1)
 
-# Botó per actualitzar la informació Schengen dels aeroports
+# Botó recalcular Schengen
 button_set = tk.Button(root, text="Set Schengen", command=SetSchengenButton)
 button_set.grid(row=4, column=2)
 
-# Etiqueta del camp per indicar el fitxer de guardat
-label5 = tk.Label(root, text="Save file:")
+# Etiqueta fitxer on guardar aeroports
+label5 = tk.Label(root, text="Save airports file:")
 label5.grid(row=5, column=0)
 
-# Caixa de text per escriure el nom del fitxer on guardar
+# Casella nom del fitxer de sortida
 entry_save = tk.Entry(root, width=20)
 entry_save.grid(row=5, column=1)
-
-# Posem un nom de fitxer de sortida per defecte
 entry_save.insert(0, "SchengenAirports.txt")
 
-# Botó per guardar els aeroports Schengen
+# Botó guardar aeroports Schengen
 button_save = tk.Button(root, text="Save Schengen", command=SaveButton)
 button_save.grid(row=5, column=2)
 
-# Botó per mostrar el gràfic d'aeroports
+# Botó fer el gràfic d'aeroports
 button_plot = tk.Button(root, text="Plot Airports", command=PlotButton)
 button_plot.grid(row=6, column=0)
 
-# Botó per generar el fitxer KML
+# Botó crear el mapa KML d'aeroports
 button_map = tk.Button(root, text="Map Airports", command=MapButton)
 button_map.grid(row=6, column=1)
 
-# Botó per mostrar la informació detallada de l'aeroport seleccionat
-button_show = tk.Button(root, text="Show Selected", command=ShowSelectedButton)
-button_show.grid(row=6, column=2)
+# Botó mostrar l'aeroport seleccionat
+button_show_airport = tk.Button(root, text="Show Selected Airport", command=ShowSelectedAirportButton)
+button_show_airport.grid(row=6, column=2)
 
-# Llista on es mostren tots els aeroports carregats o afegits
-listbox = tk.Listbox(root, width=70, height=20)
-listbox.grid(row=7, column=0, columnspan=3)
+# Llistat aeroports
+listbox_airports = tk.Listbox(root, width=70, height=15)
+listbox_airports.grid(row=7, column=0, columnspan=3)
 
-# Zona de text on es mostren els detalls de l'aeroport seleccionat
-text_output = tk.Text(root, width=40, height=10)
-text_output.grid(row=7, column=3)
 
-# Etiqueta inferior per mostrar missatges de resultat o estat
+# Etiqueta fitxer de vols
+label6 = tk.Label(root, text="Load arrivals file:")
+label6.grid(row=0, column=4)
+
+# Casella nom del fitxer de vols
+entry_arrivals_file = tk.Entry(root, width=20)
+entry_arrivals_file.grid(row=0, column=5)
+entry_arrivals_file.insert(0, "Arrivals.txt")
+
+# Botó carregar els vols
+button_load_arrivals = tk.Button(root, text="Load Arrivals", command=LoadArrivalsButton)
+button_load_arrivals.grid(row=0, column=6)
+
+# Etiqueta fitxer on guardar vols
+label7 = tk.Label(root, text="Save flights file:")
+label7.grid(row=1, column=4)
+
+# Casella fitxer de sortida dels vols
+entry_arrivals_save = tk.Entry(root, width=20)
+entry_arrivals_save.grid(row=1, column=5)
+entry_arrivals_save.insert(0, "output_arrivals.txt")
+
+# Botó guardar els vols
+button_save_flights = tk.Button(root, text="Save Flights", command=SaveFlightsButton)
+button_save_flights.grid(row=1, column=6)
+
+# Botó mostrar el gràfic d'arribades
+button_plot_arrivals = tk.Button(root, text="Plot Arrivals", command=PlotArrivalsButton)
+button_plot_arrivals.grid(row=2, column=4)
+
+# Botó mostrar el gràfic per aerolínies
+button_plot_airlines = tk.Button(root, text="Plot Airlines", command=PlotAirlinesButton)
+button_plot_airlines.grid(row=2, column=5)
+
+# Botó mostrar el gràfic de tipus de vol
+button_plot_type = tk.Button(root, text="Plot Flights Type", command=PlotFlightsTypeButton)
+button_plot_type.grid(row=2, column=6)
+
+# Botó crear el mapa KML dels vols
+button_map_flights = tk.Button(root, text="Map Flights", command=MapFlightsButton)
+button_map_flights.grid(row=3, column=4)
+
+# Botó filtrar els vols de llarga distància
+button_longdistance = tk.Button(root, text="Filter Long Distance", command=ShowLongDistanceButton)
+button_longdistance.grid(row=3, column=5)
+
+# Botó mostrar el vol seleccionat
+button_show_aircraft = tk.Button(root, text="Show Selected Flight", command=ShowSelectedAircraftButton)
+button_show_aircraft.grid(row=3, column=6)
+
+# Llistat on es veuen els vols
+listbox_aircrafts = tk.Listbox(root, width=70, height=15)
+listbox_aircrafts.grid(row=7, column=4, columnspan=3)
+
+# Zona de text informació detallada
+text_output = tk.Text(root, width=40, height=12)
+text_output.grid(row=7, column=7)
+
+# Etiqueta de sota per missatges
 label_result = tk.Label(root, text="Ready")
-label_result.grid(row=8, column=0, columnspan=3)
+label_result.grid(row=8, column=0, columnspan=7)
 
-# Iniciem el bucle principal de la interfície gràfica
+# Activar finestra
 root.mainloop()

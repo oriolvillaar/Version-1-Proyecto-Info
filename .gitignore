@@ -1,0 +1,6 @@
+﻿__pycache__/
+*.pyc
+*.kml
+output_arrivals.txt
+flights.kml
+*.mp4
