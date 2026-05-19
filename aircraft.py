@@ -174,7 +174,57 @@ def SaveFlights(aircrafts, filename):
    file.close()
    return True
 
+def PlotAirlinesAorE(aircrafts):
+   if len(aircrafts) == 0:
+       print("Error: empty aircraft list")
+       return
 
+   airlines = []
+   counts = []
+
+   i = 0
+   while i < len(aircrafts):
+       company = aircrafts[i].airline
+
+       if company[0] == "A" or company[0] == "E":
+           found = False
+           j = 0
+           while j < len(airlines) and found == False:
+               if airlines[j] == company:
+                   counts[j] = counts[j] + 1
+                   found = True
+               j = j + 1
+
+           if found == False:
+               airlines.append(company)
+               counts.append(1)
+
+       i = i + 1
+
+   airlines2 = []
+   counts2 = []
+   others = 0
+
+   i = 0
+   while i < len(airlines):
+       if counts[i] >= 3:  # Mínim 3 vols per poder aparèxier com a aerolínia pròpia
+           airlines2.append(airlines[i])
+           counts2.append(counts[i])
+       else:
+           others = others + counts[i]
+       i = i + 1
+
+   if others > 0:
+       airlines2.append("Others")
+       counts2.append(others)
+
+
+   plt.bar(airlines2, counts2)
+   plt.xlabel("Airline")
+   plt.ylabel("Number of flights")
+   plt.title("Flights per airline starting with A or E")
+   plt.grid()
+   plt.show()
 
 #Fem gràfic per aerolínies filtrant el nombre de vols per poder aparèixer com a aerolínia pròpia i no col·lapsar els títols
 def PlotAirlines(aircrafts):
